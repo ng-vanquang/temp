@@ -1,90 +1,80 @@
 import os
-import sys
+import shutil
+import threading
+from queue import Queue
 from tqdm import tqdm
 
+SOURCE_DIR = "/path/to/A"
+DEST_DIR = "/path/to/B"
 
-def load_original_files(file_a_path):
-    """
-    Trả về dict:
-    {
-        filename: size
-    }
-    """
-    original_files = {}
-
-    with open(file_a_path, "r", encoding="utf-8") as f:
-        for line in tqdm(f, desc="Reading File A"):
-            path = line.strip()
-            if not path:
-                continue
-
-            if not os.path.exists(path):
-                print(f"WARNING: File not found: {path}")
-                continue
-
-            filename = os.path.basename(path)
-            size = os.path.getsize(path)
-
-            original_files[filename] = size
-
-    return original_files
+NUM_WORKERS = min(64, (os.cpu_count() or 4) * 4)
+QUEUE_SIZE = 10000
 
 
-def verify_files(file_a_path, folder_b_path):
-    print("Loading original file list...")
-    original_files = load_original_files(file_a_path)
+def fast_copy(src_path):
+    rel_path = os.path.relpath(src_path, SOURCE_DIR)
+    dst_path = os.path.join(DEST_DIR, rel_path)
 
-    missing_files = []
-    size_mismatch = []
-    verified = 0
+    os.makedirs(os.path.dirname(dst_path), exist_ok=True)
 
-    print("Scanning Folder B...")
+    try:
+        # copyfile dùng sendfile nếu OS hỗ trợ (nhanh hơn copyfileobj)
+        shutil.copyfile(src_path, dst_path)
+    except Exception:
+        # fallback
+        with open(src_path, 'rb') as fsrc, open(dst_path, 'wb') as fdst:
+            shutil.copyfileobj(fsrc, fdst, length=1024 * 1024 * 8)
 
-    # Build dict for moved files
-    moved_files = {}
 
-    with os.scandir(folder_b_path) as it:
-        for entry in tqdm(it, desc="Scanning Folder B"):
-            if entry.is_file():
-                stat = entry.stat()
-                moved_files[entry.name] = stat.st_size
+def worker(queue, pbar):
+    while True:
+        src = queue.get()
+        if src is None:
+            break
+        fast_copy(src)
+        pbar.update(1)
+        queue.task_done()
 
-    print("Comparing...")
 
-    for filename, original_size in tqdm(original_files.items(), desc="Verifying"):
-        if filename not in moved_files:
-            missing_files.append(filename)
-        else:
-            moved_size = moved_files[filename]
-            if moved_size != original_size:
-                size_mismatch.append(
-                    (filename, original_size, moved_size)
-                )
-            else:
-                verified += 1
+def file_producer(queue):
+    for root, _, files in os.walk(SOURCE_DIR):
+        for f in files:
+            if f.endswith(".wav"):
+                queue.put(os.path.join(root, f))
+    # gửi tín hiệu stop
+    for _ in range(NUM_WORKERS):
+        queue.put(None)
 
-    print("\n===== RESULT =====")
-    print(f"Total in File A     : {len(original_files)}")
-    print(f"Total in Folder B   : {len(moved_files)}")
-    print(f"Verified OK         : {verified}")
-    print(f"Missing files       : {len(missing_files)}")
-    print(f"Size mismatch       : {len(size_mismatch)}")
 
-    if missing_files:
-        print("\nExample missing files:")
-        for f in missing_files[:10]:
-            print(f)
+def count_files():
+    count = 0
+    for _, _, files in os.walk(SOURCE_DIR):
+        for f in files:
+            if f.endswith(".wav"):
+                count += 1
+    return count
 
-    if size_mismatch:
-        print("\nExample size mismatch:")
-        for f in size_mismatch[:5]:
-            print(f"{f[0]} | original={f[1]} | moved={f[2]}")
 
-    return missing_files, size_mismatch
+def main():
+    total_files = count_files()
+
+    queue = Queue(maxsize=QUEUE_SIZE)
+
+    with tqdm(total=total_files) as pbar:
+        threads = []
+
+        for _ in range(NUM_WORKERS):
+            t = threading.Thread(target=worker, args=(queue, pbar))
+            t.start()
+            threads.append(t)
+
+        file_producer(queue)
+
+        queue.join()
+
+        for t in threads:
+            t.join()
 
 
 if __name__ == "__main__":
-    file_a = sys.argv[1]
-    folder_b = sys.argv[2]
-
-    verify_files(file_a, folder_b)
+    main()
