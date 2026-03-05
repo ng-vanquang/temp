@@ -1,5 +1,6 @@
 import os
 import json
+from tqdm import tqdm # Import thư viện progress bar
 
 # ==========================================
 # 1. CÁC HÀM XỬ LÝ LÕI (Giữ nguyên)
@@ -47,55 +48,64 @@ def mock_translation_service(extracted_items):
     return translated_items
 
 # ==========================================
-# 2. XỬ LÝ CÂY THƯ MỤC LỒNG NHAU (MỚI)
+# 2. XỬ LÝ VỚI PROGRESS BAR
 # ==========================================
 
 def process_nested_json_folders(input_folder, output_folder, target_keys):
     """
-    Duyệt đệ quy toàn bộ thư mục input, giữ nguyên cấu trúc khi lưu sang output,
-    và thêm hậu tố '-translated' vào tên file json.
+    Duyệt đệ quy, giữ nguyên cấu trúc, đổi tên file và hiển thị progress bar.
     """
-    # Hàm os.walk sẽ đi qua từng thư mục, thư mục con, và lấy ra danh sách file
+    # 1. Quét trước để thu thập tất cả đường dẫn file JSON
+    json_files = []
     for root, dirs, files in os.walk(input_folder):
         for filename in files:
             if filename.endswith(".json"):
-                # 1. Lấy đường dẫn tuyệt đối của file input
-                input_filepath = os.path.join(root, filename)
+                json_files.append(os.path.join(root, filename))
 
-                # 2. Tính toán đường dẫn tương đối (để clone cấu trúc thư mục)
-                # Ví dụ: root là "input_folder/sub1/sub2" -> rel_path là "sub1/sub2"
-                rel_path = os.path.relpath(root, input_folder)
-                
-                # 3. Tạo thư mục đích tương ứng bên trong output_folder
-                target_dir = os.path.join(output_folder, rel_path)
-                os.makedirs(target_dir, exist_ok=True) # exist_ok=True giúp không báo lỗi nếu thư mục đã có
+    if not json_files:
+        print(f"Không tìm thấy file .json nào trong thư mục '{input_folder}'")
+        return
 
-                # 4. Tách tên file và đuôi file để thêm hậu tố "-translated"
-                # Ví dụ: "data.json" -> name="data", ext=".json"
-                name, ext = os.path.splitext(filename)
-                new_filename = f"{name}-translated{ext}"
-                
-                # 5. Lắp ráp đường dẫn file output cuối cùng
-                output_filepath = os.path.join(target_dir, new_filename)
+    print(f"Tìm thấy tổng cộng {len(json_files)} file JSON. Bắt đầu xử lý...\n")
 
-                print(f"Đang xử lý: {input_filepath}")
-                
-                try:
-                    # ĐỌC - TRÍCH XUẤT - DỊCH - CẬP NHẬT - GHI
-                    with open(input_filepath, 'r', encoding='utf-8') as file:
-                        json_data = json.load(file)
+    # 2. Xử lý từng file kết hợp Progress Bar
+    # Sử dụng tqdm bao bọc danh sách file để tạo thanh tiến trình
+    for input_filepath in tqdm(json_files, desc="Tiến độ dịch thuật", unit="file"):
+        
+        # Tách root và filename từ input_filepath
+        root = os.path.dirname(input_filepath)
+        filename = os.path.basename(input_filepath)
 
-                    extracted_items = extract_text_with_paths(json_data, target_keys)
-                    translated_items = mock_translation_service(extracted_items)
-                    updated_json_data = update_json_with_paths(json_data, translated_items)
+        # Tính toán đường dẫn tương đối và tạo thư mục đích
+        rel_path = os.path.relpath(root, input_folder)
+        target_dir = os.path.join(output_folder, rel_path)
+        os.makedirs(target_dir, exist_ok=True)
 
-                    with open(output_filepath, 'w', encoding='utf-8') as file:
-                        json.dump(updated_json_data, file, ensure_ascii=False, indent=4)
-                        
-                    print(f"  -> Lưu thành công: {output_filepath}")
+        # Đổi tên file
+        name, ext = os.path.splitext(filename)
+        new_filename = f"{name}-translated{ext}"
+        output_filepath = os.path.join(target_dir, new_filename)
+        
+        try:
+            # Xử lý lõi
+            with open(input_filepath, 'r', encoding='utf-8') as file:
+                json_data = json.load(file)
 
-                except Exception as e:
-                    print(f"  -> [LỖI] Không thể xử lý file {input_filepath}: {e}")
+            extracted_items = extract_text_with_paths(json_data, target_keys)
+            
+            # Nếu file không có key nào cần dịch, ta vẫn có thể copy sang folder mới
+            if extracted_items:
+                translated_items = mock_translation_service(extracted_items)
+                updated_json_data = update_json_with_paths(json_data, translated_items)
+            else:
+                updated_json_data = json_data # Giữ nguyên nếu không có gì để dịch
+
+            with open(output_filepath, 'w', encoding='utf-8') as file:
+                json.dump(updated_json_data, file, ensure_ascii=False, indent=4)
+
+        except Exception as e:
+            # Lưu ý: Khi dùng tqdm, dùng tqdm.write thay vì print để không làm vỡ giao diện thanh tiến trình
+            tqdm.write(f"[LỖI] Không thể xử lý file {input_filepath}: {e}")
 
 # ==========================================
 # CHẠY THỰC TẾ
