@@ -1,110 +1,80 @@
-import multiprocessing
-import time
-import sys
-
-def cpu_worker(target_percent):
+def extract_text_with_paths(data, target_keys, current_path=None, extracted_items=None):
     """
-    Tạo tải cho 1 core ở một mức phần trăm nhất định bằng phương pháp Duty Cycle.
+    Hàm đệ quy trích xuất text từ JSON dựa trên danh sách key cho trước.
+    
+    :param data: Object JSON hiện tại (dict hoặc list).
+    :param target_keys: Danh sách các key cần dịch (list of strings).
+    :param current_path: Đường dẫn hiện tại đang duyệt (list).
+    :param extracted_items: Danh sách lưu trữ kết quả (list of dicts).
+    :return: Danh sách các object chứa đường dẫn (path) và nội dung (text).
     """
-    # Nếu set 0%, không làm gì cả
-    if target_percent <= 0:
-        while True:
-            time.sleep(1)
+    # Khởi tạo giá trị mặc định cho lần gọi đầu tiên
+    if current_path is None:
+        current_path = []
+    if extracted_items is None:
+        extracted_items = []
+
+    # Xử lý nếu data là một Object (Dictionary)
+    if isinstance(data, dict):
+        for key, value in data.items():
+            # Tạo đường dẫn mới đến node hiện tại
+            new_path = current_path + [key]
             
-    # Nếu set 100%, chạy vòng lặp vô hạn vắt kiệt core
-    if target_percent >= 100:
-        while True:
-            pass
-
-    # Phân bổ thời gian hoạt động và nghỉ ngơi
-    work_time = target_percent / 100.0
-    sleep_time = 1.0 - work_time
-    cycle_time = 0.1  # Chu kỳ 100ms (0.1 giây) để biểu đồ mượt mà
-    
-    actual_work = work_time * cycle_time
-    actual_sleep = sleep_time * cycle_time
-
-    while True:
-        start = time.time()
-        # Trạng thái Active: Bắt CPU tính toán
-        while time.time() - start < actual_work:
-            pass
-        # Trạng thái Idle: Cho CPU nghỉ ngơi
-        time.sleep(actual_sleep)
-
-def main():
-    # ==========================================
-    # ⚙️ BẠN CÓ THỂ TÙY CHỈNH THÔNG SỐ Ở ĐÂY ⚙️
-    # ==========================================
-    TARGET_CPU_PERCENT = 60  # Mức % CPU muốn sử dụng (trên mỗi core)
-    
-    TOTAL_RAM_GB = 110       # Tổng số RAM vật lý của server (GB)
-    TARGET_RAM_PERCENT = 60  # Mức % RAM muốn chiếm dụng
-    # ==========================================
-
-    print("=" * 50)
-    print("🚀 BẮT ĐẦU CÔNG CỤ TẠO TẢI CPU & RAM 🚀")
-    print("=" * 50)
-
-    # 1. KHỞI CHẠY TIẾN TRÌNH ÉP TẢI CPU
-    cores = multiprocessing.cpu_count()
-    print(f"\n[CPU] Đang khởi chạy mức tải ~{TARGET_CPU_PERCENT}% trên toàn bộ {cores} cores...")
-    
-    cpu_processes = []
-    for _ in range(cores):
-        p = multiprocessing.Process(target=cpu_worker, args=(TARGET_CPU_PERCENT,))
-        p.start()
-        cpu_processes.append(p)
-    
-    # 2. KHỞI CHẠY TIẾN TRÌNH ÉP TẢI RAM
-    print(f"\n[RAM] Máy chủ khai báo: {TOTAL_RAM_GB} GB RAM.")
-    
-    gb_to_bytes = 1024 * 1024 * 1024
-    target_bytes = int((TOTAL_RAM_GB * (TARGET_RAM_PERCENT / 100.0)) * gb_to_bytes)
-    target_gb_display = target_bytes / gb_to_bytes
-    
-    print(f"[RAM] Mục tiêu chiếm dụng: {TARGET_RAM_PERCENT}% (Khoảng {target_gb_display:.2f} GB)")
-    
-    dummy_memory = []
-    bytes_allocated = 0
-    chunk_size = gb_to_bytes  # Cấp phát 1GB mỗi lần
-
-    try:
-        while bytes_allocated < target_bytes:
-            # Điều chỉnh lượng cấp phát cuối cùng cho khớp chính xác
-            if target_bytes - bytes_allocated < chunk_size:
-                chunk_size = target_bytes - bytes_allocated
+            # Nếu key nằm trong danh sách cần dịch và value là text
+            if key in target_keys and isinstance(value, str):
+                extracted_items.append({
+                    "path": new_path,
+                    "original_text": value
+                })
             
-            # Ghi trực tiếp chuỗi byte vào RAM
-            dummy_memory.append(b'x' * chunk_size)
-            bytes_allocated += chunk_size
-            
-            print(f"[RAM] Đang cấp phát... Đã chiếm dụng: {bytes_allocated / gb_to_bytes:.2f} GB")
-            time.sleep(0.5)  # Tránh làm hệ điều hành bị "ngộp"
-            
-        print("\n✅ ĐÃ ĐẠT MỤC TIÊU TẢI CHO CẢ CPU VÀ RAM!")
-        print("⏳ Đang duy trì trạng thái... (Nhấn Ctrl+C để dừng và giải phóng tài nguyên)")
-        
-        # Giữ cho script chính sống để duy trì RAM và quản lý tiến trình con
-        while True:
-            time.sleep(1)
+            # Kể cả khi đã khớp hay không, nếu value chứa dữ liệu lồng nhau thì tiếp tục đi xuống
+            if isinstance(value, (dict, list)):
+                extract_text_with_paths(value, target_keys, new_path, extracted_items)
 
-    except MemoryError:
-        print("\n❌ [Lỗi] Tràn bộ nhớ! Hệ điều hành từ chối cấp phát thêm RAM (OOM).")
-    except KeyboardInterrupt:
-        print("\n\n🛑 Đã nhận lệnh dừng (Ctrl+C). Đang tiến hành dọn dẹp hệ thống...")
-    finally:
-        # 3. DỌN DẸP TÀI NGUYÊN AN TOÀN KHI THOÁT
-        print("[Dọn dẹp] Đang tắt các tiến trình CPU...")
-        for p in cpu_processes:
-            p.terminate()
-            p.join()
-            
-        print("[Dọn dẹp] Đang giải phóng bộ nhớ RAM ảo...")
-        del dummy_memory
-        
-        print("✨ Hoàn tất! Hệ thống đã được trả lại trạng thái bình thường.")
-        sys.exit(0)
+    # Xử lý nếu data là một Mảng (List)
+    elif isinstance(data, list):
+        for index, item in enumerate(data):
+            new_path = current_path + [index]
+            # Mảng thì không có key, chỉ cần duyệt tiếp các phần tử bên trong
+            if isinstance(item, (dict, list)):
+                extract_text_with_paths(item, target_keys, new_path, extracted_items)
 
-if __name__ == '__main__':
-    main()
+    return extracted_items
+
+
+# ==========================================
+# CHẠY THỬ NGHIỆM VỚI DỮ LIỆU ĐA DẠNG
+# ==========================================
+
+# Mock data mô phỏng cấu trúc phức tạp: mảng lồng object, object lồng mảng, 
+# có key lặp lại, có key bị thiếu.
+mock_json_data = {
+    "metadata": {
+        "version": 1.0,
+        "description": "Đây là mô tả chung của file" # Cần dịch
+    },
+    "data_list": [
+        {
+            "id": 101,
+            "request": "Yêu cầu số 1", # Cần dịch
+            "details": {
+                "description": "Mô tả chi tiết yêu cầu 1", # Cần dịch
+                "notes": "Ghi chú không cần dịch"
+            }
+        },
+        {
+            "id": 102,
+            # Thiếu key "request" và "description" ở đây (code vẫn chạy bình thường)
+            "other_field": "Dữ liệu khác"
+        }
+    ]
+}
+
+keys_can_dich = ["request", "description"]
+
+# Chạy hàm trích xuất
+ket_qua_trich_xuat = extract_text_with_paths(mock_json_data, keys_can_dich)
+
+# In kết quả
+import json
+print(json.dumps(ket_qua_trich_xuat, ensure_ascii=False, indent=2))
