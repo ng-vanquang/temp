@@ -1,80 +1,73 @@
-def extract_text_with_paths(data, target_keys, current_path=None, extracted_items=None):
+def update_json_with_paths(original_data, translated_items):
     """
-    Hàm đệ quy trích xuất text từ JSON dựa trên danh sách key cho trước.
+    Hàm đắp bản dịch vào lại JSON gốc dựa trên đường dẫn (path).
     
-    :param data: Object JSON hiện tại (dict hoặc list).
-    :param target_keys: Danh sách các key cần dịch (list of strings).
-    :param current_path: Đường dẫn hiện tại đang duyệt (list).
-    :param extracted_items: Danh sách lưu trữ kết quả (list of dicts).
-    :return: Danh sách các object chứa đường dẫn (path) và nội dung (text).
+    :param original_data: Object JSON gốc (sẽ bị thay đổi trực tiếp).
+    :param translated_items: Danh sách các dict chứa 'path' và 'trans_text'.
+    :return: Object JSON đã được cập nhật bản dịch.
     """
-    # Khởi tạo giá trị mặc định cho lần gọi đầu tiên
-    if current_path is None:
-        current_path = []
-    if extracted_items is None:
-        extracted_items = []
+    for item in translated_items:
+        path = item.get("path")
+        trans_text = item.get("trans_text")
+        
+        # Bỏ qua nếu dữ liệu không hợp lệ
+        if not path or trans_text is None:
+            continue
 
-    # Xử lý nếu data là một Object (Dictionary)
-    if isinstance(data, dict):
-        for key, value in data.items():
-            # Tạo đường dẫn mới đến node hiện tại
-            new_path = current_path + [key]
+        # Dùng một biến con trỏ để đi sâu vào cấu trúc JSON
+        current_node = original_data
+        
+        # Duyệt path từ đầu đến phần tử áp chót (bỏ qua phần tử cuối cùng)
+        for key_or_index in path[:-1]:
+            current_node = current_node[key_or_index]
             
-            # Nếu key nằm trong danh sách cần dịch và value là text
-            if key in target_keys and isinstance(value, str):
-                extracted_items.append({
-                    "path": new_path,
-                    "original_text": value
-                })
-            
-            # Kể cả khi đã khớp hay không, nếu value chứa dữ liệu lồng nhau thì tiếp tục đi xuống
-            if isinstance(value, (dict, list)):
-                extract_text_with_paths(value, target_keys, new_path, extracted_items)
+        # Phần tử cuối cùng trong path chính là key/index cần thay thế
+        final_key = path[-1]
+        
+        # Gán đè bản dịch vào đúng vị trí
+        current_node[final_key] = trans_text
 
-    # Xử lý nếu data là một Mảng (List)
-    elif isinstance(data, list):
-        for index, item in enumerate(data):
-            new_path = current_path + [index]
-            # Mảng thì không có key, chỉ cần duyệt tiếp các phần tử bên trong
-            if isinstance(item, (dict, list)):
-                extract_text_with_paths(item, target_keys, new_path, extracted_items)
-
-    return extracted_items
-
+    return original_data
 
 # ==========================================
-# CHẠY THỬ NGHIỆM VỚI DỮ LIỆU ĐA DẠNG
+# CHẠY THỬ NGHIỆM VỚI DỮ LIỆU ĐÃ DỊCH
 # ==========================================
 
-# Mock data mô phỏng cấu trúc phức tạp: mảng lồng object, object lồng mảng, 
-# có key lặp lại, có key bị thiếu.
+# 1. Mock data gốc (tương tự như bước trước)
 mock_json_data = {
     "metadata": {
-        "version": 1.0,
-        "description": "Đây là mô tả chung của file" # Cần dịch
+        "description": "Đây là mô tả chung của file"
     },
     "data_list": [
         {
             "id": 101,
-            "request": "Yêu cầu số 1", # Cần dịch
+            "request": "Yêu cầu số 1",
             "details": {
-                "description": "Mô tả chi tiết yêu cầu 1", # Cần dịch
-                "notes": "Ghi chú không cần dịch"
+                "description": "Mô tả chi tiết yêu cầu 1"
             }
-        },
-        {
-            "id": 102,
-            # Thiếu key "request" và "description" ở đây (code vẫn chạy bình thường)
-            "other_field": "Dữ liệu khác"
         }
     ]
 }
 
-keys_can_dich = ["request", "description"]
+# 2. Giả lập data bạn đã xử lý xong phần dịch (có path và trans_text)
+danh_sach_da_dich = [
+  {
+    "path": ["metadata", "description"],
+    "trans_text": "This is the general description of the file"
+  },
+  {
+    "path": ["data_list", 0, "request"],
+    "trans_text": "Request number 1"
+  },
+  {
+    "path": ["data_list", 0, "details", "description"],
+    "trans_text": "Detailed description of request 1"
+  }
+]
 
-# Chạy hàm trích xuất
-ket_qua_trich_xuat = extract_text_with_paths(mock_json_data, keys_can_dich)
+# 3. Chạy hàm cập nhật
+json_hoan_thien = update_json_with_paths(mock_json_data, danh_sach_da_dich)
 
-# In kết quả
+# In kết quả kiểm tra
 import json
-print(json.dumps(ket_qua_trich_xuat, ensure_ascii=False, indent=2))
+print(json.dumps(json_hoan_thien, ensure_ascii=False, indent=2))
