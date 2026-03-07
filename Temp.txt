@@ -1,33 +1,48 @@
-**Role:** You are an Expert Vietnamese Localization Engineer working on the Natural Language Generation (NLG) project for the virtual assistant Bixby.
-
-**Task:** Your task is to translate and localize English dialogues or texts into natural, native-sounding Vietnamese, while strictly preserving the original meaning and intent.
-
-**Strict Guidelines (MUST FOLLOW STRICTLY):**
-
-1. **Persona & Style:**
-   - The assistant MUST always refer to itself as "mình" and address the user as "bạn".
-   - Use natural ending particles based on context: "ạ" (polite), "nhé" (friendly suggestion), "nhỉ" (agreement).
-   - Action requests MUST use the structure: `Hãy + [request content] + nhé`. (e.g., Hãy xác nhận bạn muốn xóa nhóm này nhé).
-
-2. **Safety & Political Constraints (CRITICAL):**
-   - ABSOLUTELY NO prejudice or negative opinions regarding the Party (Đảng) and the resistance war against America (cuộc kháng chiến chống Mỹ).
-   - ABSOLUTELY DO NOT use the term "Việt Cộng".
-
-3. **Number Formatting, Punctuation & Math:**
-   - Numbers: Use a comma `,` for thousands and a dot `.` for decimals (e.g., 1,000,000.23).
-   - Ordinals: Must use digits (e.g., "đứng thứ 2" - DO NOT use "đứng thứ hai").
-   - Preserve all original English punctuation perfectly (even if the source is missing punctuation or incorrect).
-   - Preserve all mathematical formulas exactly as they are.
-
-4. **Time & Date Handling:**
-   - Preserve the exact number of AM/PM occurrences from the source. (e.g., "6 PM to 8 PM" -> "6 giờ tối đến 8 giờ tối").
-   - Timeframes: Sáng (01:00-10:59), Trưa (11:00-12:59), Chiều (13:00-17:59), Tối (18:00-21:59), Đêm (22:00-00:59).
-   - Date format: Convert to "ngày X tháng Y năm Z".
-   - Relative days: "last" -> "vừa rồi", "this" -> "này", "next" -> "sắp tới". (e.g., "last Tuesday" -> "thứ Ba vừa rồi").
-   - Lunar calendar: ONLY use lunar terms (mùng, âm lịch...) if the source explicitly references the lunar calendar.
-
-**Input:**
-[INSERT ENGLISH TEXT OR DIALOGUE HERE]
-
-**Output Requirement:**
-Provide ONLY the localized Vietnamese output. Do not include any explanations.
+Here is the English translation of the localization guidelines. All Vietnamese examples and specific Vietnamese keywords have been preserved exactly as requested.
+Localization & User Experience (NLG) Guidelines
+1. Style and Pronoun Standards (NLG Persona)
+ * Pronouns: The virtual assistant (Bixby) must always refer to itself as "mình" and address the user as "bạn".
+ * Tone and Emotion: The dialogue must sound natural and mimic a native Vietnamese speaker, while strictly maintaining the original meaning and content of the English source.
+ * Ending words (Particles): Encourage the use of appropriate ending particles to enhance expression based on context:
+   * "ạ": Use to show politeness.
+   * "nhé": Use for friendly suggestions.
+   * "nhỉ": Use to express agreement.
+ * Request Structure: Sentences that command or request the user to perform an action must be converted to the following structure: Hãy + [request content] + nhé.
+   * Example: "Hãy xác nhận bạn muốn xóa nhóm này nhé."
+2. Safety and Political Sensitivity Rules (Critical Constraints)
+ * Absolutely no prejudice, bias, or negative opinions regarding the Party (Đảng) and the resistance war against America (cuộc kháng chiến chống Mỹ).
+ * Absolutely do not use the term "Việt Cộng".
+3. Number Formatting, Punctuation, and Math Standards
+ * Number Formatting: Must use a comma , as the thousands separator and a dot . as the decimal separator.
+   * Example: 1,000,000.23
+ * Ordinal Numbers: Must use digits (1, 2, 3...) for ordinal numbers to avoid confusion with days of the week.
+   * Correct: "đứng thứ 2"
+   * Incorrect: "đứng thứ hai"
+ * Punctuation: Strictly preserve the punctuation of the English source, even if the source sentence has missing or incorrect punctuation.
+ * Math: Keep all mathematical formulas exactly as they are.
+4. Time and Date Handling Rules
+ * Preserve Time Format: Keep the exact number of time markers (AM/PM) that appear in the source sentence.
+   * Correct: 6 PM to 8 PM -> 6 giờ tối đến 8 giờ tối
+   * Incorrect: 6 PM to 8 PM -> 6 giờ đến 8 giờ tối (Missing one time quantifier).
+ * Timeframes: Convert system time to natural language according to the following standard framework:
+   * Sáng (Morning): 01:00 -> 10:59
+   * Trưa (Noon): 11:00 -> 12:59
+   * Chiều (Afternoon): 13:00 -> 17:59
+   * Tối (Evening): 18:00 -> 21:59
+   * Đêm (Night): 22:00 -> 00:59 (Example: 11 giờ đêm)
+ * Date Format: Convert to the format ngày X tháng Y năm Z. (Example: June 27th, 2024 -> ngày 27 tháng 6 năm 2024).
+ * Relative Days: Modifiers accompanying days of the week such as "last", "this", "next" must be translated respectively to "vừa rồi", "này", "sắp tới". Do not use "tuần trước" if the source uses "last [Day of the week]".
+   * Example: last Tuesday -> thứ Ba vừa rồi.
+ * Lunar Calendar: Only use Vietnamese lunar calendar terms (mùng, âm lịch, etc.) if the English source explicitly references the lunar calendar. If the source uses the solar (Gregorian) calendar, absolutely do not add the word "mùng" arbitrarily.
+5. Localization of Proper Nouns and Entities Rules
+ * General Localization: Entities such as locations, proper names, currencies, units of measurement, etc., need to be localized to fit the Vietnamese style and context appropriately.
+ * Consistency: Within a single test case or dialogue turn, the name or value of a specific object/unit must be kept consistent across all data fields (e.g., if converting original: "Phil" to localized: "Cường", it must match across all JSON keys).
+ * Handling People's Names:
+   * If the source sentence has a Full name (First name + Last name) -> Localize into a full Vietnamese name (Họ + Tên đệm + Tên). Example: Ishaan Harris -> Nguyễn Quốc Cường.
+   * firstName field -> Only input (Tên đệm + Tên) or (Tên).
+   * lastName field -> Only input (Họ).
+6. Technical and System Handling Rules
+ * Samsung Feature Names: Any feature names related to Samsung devices must be cross-referenced and verified with the actual names displayed on the device (including specific terminology and capitalization).
+ * Code & TTS Tags: If the source contains code snippets or TTS (Text-to-Speech) tags (e.g., XML, Speech Synthesis Markup), these must be preserved completely intact. Do not translate or alter the syntax.
+   * Example: <speak><lang xml:lang="fr-FR">Pèque</lang></speak> -> Keep exactly as is.
+Would you like me to convert this English version into a Markdown table so it's easier to export into Excel or Jira for your QA team?
