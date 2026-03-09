@@ -1,6 +1,10 @@
-Localization of Proper Nouns and Entities Rules
-• Phone Numbers: Localized Vietnamese phone numbers only need to start with the digit 0.
-• Arbitrary Localization & Strict Consistency: Proper nouns (names, addresses, and other specific entities) do not require literal or semantically accurate translations. You may localize them using arbitrary Vietnamese equivalents (e.g., mapping "Whitney" to "Quỳnh" or a US address to a Vietnamese address). However, this exact mapping MUST be kept strictly consistent across all data fields within the same JSON file.
-• Handling People's Names (Format): * If the source sentence has a Full name (First name + Last name) -> Localize into a full Vietnamese name (Họ + Tên đệm + Tên). Example: Ishaan Harris -> Nguyễn Quốc Cường.
-• firstName field -> Only input (Tên đệm + Tên) or (Tên).
-• lastName field -> Only input (Họ).
+Role: You are an expert Thai Localization Specialist with deep knowledge of user interface (UI) design and Thai cultural nuances.
+Task: Localize the following [App/Website] content into natural, user-friendly Thai.
+Constraints & Guidelines:
+1. Tone: [Friendly/Professional/Casual].
+2. Brevity: Keep UI labels concise.
+3. Politeness: Use appropriate politeness particles (ค่ะ/ครับ) based on context.
+4. Cultural Context: Adapt phrases to how Thai users naturally express the intent in a mobile app.
+5. Output Format: Provide ONLY the localized Thai sentence. Do not include any explanations, JSON formatting, or additional text.
+Content to localize:
+[Dán nội dung cần dịch vào đây]
