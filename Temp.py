@@ -1,23 +1,56 @@
-import pandas as pd
+import pygame
+import os
+import time
 
-def process_tsv_list_pandas(tsv_files, separator=" "):
-    result_list = []
+def play_playlist(audio_files):
+    # Khởi tạo mixer của pygame
+    pygame.mixer.init()
     
-    for file_path in tsv_files:
-        try:
-            # Đọc file tsv, chỉ load cột thứ 4 (usecols=[3]) để tối ưu bộ nhớ
-            # header=None giả sử file của bạn không có dòng tiêu đề. Nếu có dòng tiêu đề, bạn có thể bỏ header=None đi.
-            df = pd.read_csv(file_path, sep='\t', header=None, usecols=[3])
-            
-            # Chuyển cột thành list các string và nối lại
-            joined_row = separator.join(df[3].astype(str).tolist())
-            result_list.append(joined_row)
-            
-        except Exception as e:
-            print(f"Lỗi khi xử lý {file_path}: {e}")
-            
-    return result_list
+    current_index = 0
+    total_files = len(audio_files)
 
-# --- Ví dụ cách sử dụng ---
-my_tsv_files = ['file1.tsv', 'file2.tsv']
-final_list_pd = process_tsv_list_pandas(my_tsv_files)
+    print(f"--- Bắt đầu phát danh sách ({total_files} file) ---")
+
+    while current_index < total_files:
+        file_path = audio_files[current_index]
+        
+        # Kiểm tra file tồn tại
+        if not os.path.exists(file_path):
+            print(f"[Lỗi] Không tìm thấy: {file_path}")
+            current_index += 1
+            continue
+
+        print(f"\n[Đang phát] {os.path.basename(file_path)}")
+        
+        try:
+            pygame.mixer.music.load(file_path)
+            pygame.mixer.music.play()
+
+            # Vòng lặp chờ file hiện tại phát xong
+            while pygame.mixer.music.get_busy():
+                # Nghỉ một khoảng ngắn để tránh tốn tài nguyên CPU
+                time.sleep(0.1) 
+                
+            print(f"[Hoàn thành] {os.path.basename(file_path)}")
+            current_index += 1
+
+        except Exception as e:
+            print(f"[Lỗi khi phát file] {e}")
+            current_index += 1
+
+    print("\n--- Đã phát hết danh sách ---")
+    pygame.mixer.quit()
+
+if __name__ == "__main__":
+    # Thay thế list này bằng đường dẫn thực tế của bạn
+    # Bạn có thể dùng os.listdir() để lấy toàn bộ file trong 1 folder
+    my_playlist = [
+        "audio1.mp3",
+        "audio2.wav",
+        "path/to/your/audio3.mp3"
+    ]
+
+    if my_playlist:
+        play_playlist(my_playlist)
+    else:
+        print("Danh sách phát trống.")
