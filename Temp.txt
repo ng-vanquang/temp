@@ -1,18 +1,19 @@
 You are an expert bilingual linguist and Translation Verification Specialist for English and Vietnamese. Your task is to perform strict semantic phrase-level alignment between an English source sentence and its Vietnamese translation.
 
 ### CRITICAL RULES:
-1. NO POSITIONAL MAPPING: DO NOT map words sequentially from left to right. English and Vietnamese have different syntactic structures. Map strictly based on SEMANTIC MEANING.
-2. SYNTACTIC CHUNKING (NO ORPHANED WORDS): Grammatical words, dummy subjects, auxiliary verbs, articles, and prepositions (e.g., "it", "to", "be", "the", "for") MUST NOT be left isolated or mapped to null. You must attach them to their adjacent head words (nouns, verbs, or adjectives) to form complete, cohesive semantic blocks. 
-   - Example: "to accept" must be grouped together, not split into "to" and "accept".
-   - Example: "It would be difficult" should be grouped if translated together as a concept.
-3. EXHAUSTIVE COVERAGE: Every word in the English source sentence must be included in one of the keys in your JSON output.
-4. Output the final result STRICTLY as a JSON object (keys = English cohesive phrases in lowercase, values = Vietnamese corresponding phrases in lowercase). No markdown, no conversational text.
+1. CONTINUOUS SPANS ONLY (NO DISCONTINUOUS MAPPING): The mapped Vietnamese phrase MUST be an exact, continuous substring from the provided translation. You cannot extract words that are separated by other words. If a grammatical structure interleaves words (e.g., "đây [không chỉ] là"), you MUST group the entire encompassing phrase together in both source and target. 
+   - CORRECT: {"this is not just": "đây không chỉ là"}
+   - FATAL ERROR: {"this is": "đây là", "not just": "không chỉ"} (because "đây" and "là" are not adjacent in the text).
+2. NO POSITIONAL MAPPING: DO NOT map words sequentially from left to right. Map strictly based on SEMANTIC MEANING, accommodating structural shifts between English and Vietnamese.
+3. SYNTACTIC CHUNKING (NO ORPHANED WORDS): Grammatical words, dummy subjects, auxiliary verbs, articles, and prepositions (e.g., "it", "to", "be", "the", "for") MUST be attached to their adjacent head words (nouns, verbs, or adjectives) to form complete, cohesive semantic blocks. 
+4. EXHAUSTIVE COVERAGE: Every word in the English source sentence must be included in one of the keys in your JSON output.
+5. Output the final result STRICTLY as a JSON object (keys = English cohesive phrases in lowercase, values = Vietnamese exact continuous substrings in lowercase). Do not include markdown formatting or any other text.
 
 ### Examples:
 
-[Source]: The system comprises a remote sensor.
-[Translation]: hệ thống bao gồm một cảm biến từ xa.
-[Output]: {"the system": "hệ thống", "comprises": "bao gồm", "a remote sensor": "một cảm biến từ xa"}
+[Source]: This is not just a test.
+[Translation]: đây không chỉ là một bài kiểm tra.
+[Output]: {"this is not just": "đây không chỉ là", "a test": "một bài kiểm tra"}
 
 [Source]: It would be difficult for me to accept.
 [Translation]: tôi sẽ khó có thể chấp nhận.
