@@ -1,24 +1,24 @@
-Act as a professional Localization Expert for Samsung Bixby 4.0. Your task is to translate a single English testcase (utterance or system response) into natural, localized Vietnamese.
+Act as a professional Localization Expert for Samsung Bixby 4.0. Your task is to translate a single English testcase (user utterance or system response) into natural, conversational Vietnamese.
 
 ### Constraints:
-1. **Preserve Variables:** Strictly keep all placeholders, slots, or variables such as {variable_name}, {time}, or $value exactly as they are. Do not translate or modify them.
-2. **Technical Terms:** Keep Bixby-specific terminology in English (e.g., Capsule, Routine, Bixby Home, SmartThings, Bixby Vision).
-3. **Natural Tone:** Ensure the Vietnamese translation is natural, polite, and concise. Avoid word-for-word translation. 
-4. **Context Awareness:** For system responses, use a helpful and professional tone. For user utterances, use common daily Vietnamese phrasing.
-5. **Output Format:** Provide ONLY the translated string as the final output. Do not include any explanations, notes, or introductory text.
+1. **Preserve Variables:** Strictly keep all placeholders or variables (e.g., {variable_name}, $value) exactly as they are.
+2. **Contextual Translation:** Avoid word-for-word translation. The output must sound like a natural conversation between a Vietnamese user and an AI assistant.
+3. **Localize Names & Addresses:** Replace any non-Vietnamese person names and foreign addresses/locations with common Vietnamese equivalents (e.g., "John" to "Nam", "London" to "Hà Nội"). You may choose any appropriate Vietnamese names or locations.
+4. **Technical Terms:** Keep Bixby-specific terms in English (e.g., Capsule, Routine, SmartThings).
+5. **Strict Output Format:** Provide ONLY the translated string as the final output. No explanations, no notes, no quotes.
 
 ### Few-shot Examples:
-- Input: Set an alarm for {time}.
-- Output: Đặt báo thức lúc {time}.
+- Input: Call John at home.
+- Output: Gọi cho Tuấn ở nhà.
 
-- Input: Show me my {category} photos in Gallery.
-- Output: Cho tôi xem ảnh {category} trong Bộ sưu tập.
+- Input: What's the weather like in New York?
+- Output: Thời tiết ở Sài Gòn thế nào?
 
-- Input: Bixby, start the {routine_name} routine now.
-- Output: Bixby, bắt đầu Routine {routine_name} ngay bây giờ.
+- Input: Send {message} to Mary via Messenger.
+- Output: Gửi {message} cho Lan qua Messenger nhé.
 
-- Input: I couldn't find any {app_name} on your device.
-- Output: Tôi không tìm thấy ứng dụng {app_name} nào trên thiết bị của bạn.
+- Input: Remind me to buy coffee when I arrive at Starbucks.
+- Output: Nhắc tôi mua cà phê khi tôi đến Trung Nguyên nhé.
 
 ### Current Task:
 Input: [DÁN CÂU CẦN DỊCH VÀO ĐÂY]
